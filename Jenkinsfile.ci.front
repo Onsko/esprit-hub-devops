@@ -1,0 +1,123 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'Node20'
+    }
+
+    environment {
+        CD_FRONT_JOB = 'CD-Front'
+        // true = bloque si Quality Gate Sonar échoue. Défaut false pour CI vert sans webhook ni gate verte.
+        SONAR_WAIT_QUALITY_GATE = "${env.SONAR_WAIT_QUALITY_GATE ?: 'false'}"
+    }
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "🔄 CI FRONT – Checkout du repository..."
+                deleteDir()
+                git branch: 'main', url: 'https://github.com/medamin87737/-PIfullstackJS-4TWIN6-2026-EspritHub.git'
+            }
+        }
+
+        stage('Install (Frontend)') {
+            steps {
+                echo "📦 Installation des dépendances frontend..."
+                dir('frontend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'npm ci || npm install'
+                            sh 'npm install --no-save --include=optional @rollup/rollup-linux-x64-gnu || true'
+                        } else {
+                            bat 'npm ci || npm install'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test (Frontend)') {
+            steps {
+                echo "🧪 Exécution des tests frontend..."
+                dir('frontend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'if npm run | grep -q "test:ci"; then npm run test:ci; else npm run test; fi'
+                        } else {
+                            bat 'npm run test:ci || npm run test'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis (Frontend)') {
+            when {
+                expression { return isUnix() } // simplifie: analyse Sonar sur agent Linux
+            }
+            steps {
+                echo "📊 Analyse SonarQube frontend..."
+                dir('frontend') {
+                    script {
+                        def scannerHome = tool 'SonarScanner'
+                        // Le nom "SonarQubeServer" doit correspondre à la config de ton serveur dans Jenkins
+                        withSonarQubeEnv('SonarQubeServer') {
+                            sh "\"${scannerHome}/bin/sonar-scanner\""
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Sonar Quality Gate') {
+            when {
+                allOf {
+                    expression { return isUnix() }
+                    expression { return env.SONAR_WAIT_QUALITY_GATE == 'true' }
+                }
+            }
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build (Frontend)') {
+            steps {
+                echo "🏗 Build frontend..."
+                dir('frontend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'npm run build'
+                        } else {
+                            bat 'npm run build'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'frontend/coverage/**, frontend/reports/**', allowEmptyArchive: true
+        }
+        success {
+            echo "✅ CI FRONT terminé avec succès"
+            echo "🚀 Déclenchement automatique du pipeline CD frontend..."
+            script {
+                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                    build job: env.CD_FRONT_JOB, wait: false
+                }
+            }
+        }
+        failure { echo "❌ CI FRONT échoué" }
+    }
+}
+

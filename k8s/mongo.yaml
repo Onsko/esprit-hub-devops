@@ -1,0 +1,55 @@
+# MongoDB pour le backend SkillUp (1 replica — suffisant pour démo / projet)
+# Stockage hostPath : adapté au cluster kubeadm 1 nœud sans StorageClass / PVC dynamique.
+# Données sur le master : /var/skillup/mongo-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: skillup
+  labels:
+    app: mongo
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+      name: mongodb
+  selector:
+    app: mongo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+  namespace: skillup
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongo
+          # ECR Public : évite Docker Hub si IPv6 / auth.docker.io injoignable depuis le nœud
+          image: public.ecr.aws/docker/library/mongo:6.0
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '100m'
+            limits:
+              memory: '1Gi'
+              cpu: '500m'
+      volumes:
+        - name: data
+          hostPath:
+            path: /var/skillup/mongo-data
+            type: DirectoryOrCreate

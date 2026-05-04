@@ -1,0 +1,49 @@
+# --- Node / JS projects (frontend & backend) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+
+# Build / dist outputs
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# AI service data files
+ai-service/feedback_events.jsonl
+ai-service/data/models/*.jsonl
+ai-service/data/models/*.pkl
+
+# Env & secrets (never commit real keys)
+.env
+.env.*
+**/backend/.env
+**/frontend/.env
+k8s/ai-service-secret.yaml
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker / local data
+*.local.yml
+
+# Cursor / editor artifacts
+.cursor/
+terminals/

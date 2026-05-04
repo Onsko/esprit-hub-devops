@@ -1,0 +1,126 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'workapp21/skillup-backend'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        K8S_NAMESPACE = 'skillup'
+        KUBE_CONFIG_CREDENTIAL = 'kubeconfig'
+        DOCKER_CREDENTIAL = 'dockerhub-creds'
+        KUBECTL_VERSION = 'v1.29.15'
+    }
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "🔄 CD BACK – Checkout du repository..."
+                deleteDir()
+                git branch: 'main', url: 'https://github.com/medamin87737/-PIfullstackJS-4TWIN6-2026-EspritHub.git'
+            }
+        }
+
+        stage('Docker Build (Backend)') {
+            steps {
+                echo "🛠 Build image backend..."
+                dir('backend') {
+                    script {
+                        if (isUnix()) {
+                            sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} -t ${DOCKER_IMAGE}:latest ."
+                        } else {
+                            bat "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} -t ${DOCKER_IMAGE}:latest ."
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Docker Push (Backend)') {
+            steps {
+                echo "📤 Push image backend vers Docker Hub..."
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    script {
+                        if (isUnix()) {
+                            sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                            sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                            sh "docker push ${DOCKER_IMAGE}:latest"
+                        } else {
+                            bat '@echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                            bat "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                            bat "docker push ${DOCKER_IMAGE}:latest"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Scan image Trivy (excellence, optionnel)') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        def code = sh(script: 'command -v trivy >/dev/null 2>&1', returnStatus: true)
+                        if (code == 0) {
+                            sh "trivy image --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                        } else {
+                            echo 'Trivy absent sur l agent — ignorer ou installer pour bonus securite.'
+                        }
+                    } else {
+                        def code = bat(script: 'where trivy >nul 2>&1', returnStatus: true)
+                        if (code == 0) {
+                            bat "trivy image --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                        } else {
+                            echo 'Trivy absent sur l agent — ignorer ou installer pour bonus securite.'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes (Backend)') {
+            steps {
+                echo "🚀 Déploiement backend sur Kubernetes..."
+                withCredentials([file(credentialsId: "${KUBE_CONFIG_CREDENTIAL}", variable: 'KCFG')]) {
+                    script {
+                        if (isUnix()) {
+                            sh """
+                                set -e
+                                KUBECTL_LOCAL="${env.WORKSPACE}/.jenkins-kubectl/kubectl"
+                                mkdir -p "${env.WORKSPACE}/.jenkins-kubectl"
+                                if [ ! -x "\$KUBECTL_LOCAL" ]; then
+                                  curl -fsSL -o "\$KUBECTL_LOCAL" "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+                                  chmod +x "\$KUBECTL_LOCAL"
+                                fi
+                                export KUBECONFIG="${env.KCFG}"
+                                "\$KUBECTL_LOCAL" version --client
+                                "\$KUBECTL_LOCAL" apply -f k8s/namespace.yaml
+                                "\$KUBECTL_LOCAL" apply -n ${K8S_NAMESPACE} -f k8s/mongo.yaml
+                                "\$KUBECTL_LOCAL" rollout status deployment/mongo -n ${K8S_NAMESPACE} --timeout=300s
+                                "\$KUBECTL_LOCAL" apply -n ${K8S_NAMESPACE} -f k8s/backend.yaml
+                                "\$KUBECTL_LOCAL" -n ${K8S_NAMESPACE} set image deployment/backend backend=${DOCKER_IMAGE}:${IMAGE_TAG} --record || true
+                                "\$KUBECTL_LOCAL" rollout status deployment/backend -n ${K8S_NAMESPACE} --timeout=300s
+                            """
+                        } else {
+                            bat 'set KUBECONFIG=%KCFG% && kubectl version --client'
+                            bat "set KUBECONFIG=%KCFG% && kubectl apply -f k8s/namespace.yaml"
+                            bat "set KUBECONFIG=%KCFG% && kubectl apply -n ${K8S_NAMESPACE} -f k8s/mongo.yaml"
+                            bat "set KUBECONFIG=%KCFG% && kubectl rollout status deployment/mongo -n ${K8S_NAMESPACE} --timeout=300s"
+                            bat "set KUBECONFIG=%KCFG% && kubectl apply -n ${K8S_NAMESPACE} -f k8s/backend.yaml"
+                            bat "set KUBECONFIG=%KCFG% && kubectl -n ${K8S_NAMESPACE} set image deployment/backend backend=${DOCKER_IMAGE}:${IMAGE_TAG} --record || ver > nul"
+                            bat "set KUBECONFIG=%KCFG% && kubectl rollout status deployment/backend -n ${K8S_NAMESPACE} --timeout=300s"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo "✅ CD BACK déployé avec succès" }
+        failure { echo "❌ CD BACK échoué" }
+    }
+}
+

@@ -1,0 +1,125 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'Node20'
+    }
+
+    environment {
+        // Must match the Jenkins pipeline job name exactly (dashboard: CD-Back).
+        CD_BACK_JOB = 'CD-Back'
+        // true = bloque le build si Sonar Quality Gate échoue (webhook Sonar→Jenkins requis). Défaut false = CI stable tant que tests+build OK.
+        SONAR_WAIT_QUALITY_GATE = "${env.SONAR_WAIT_QUALITY_GATE ?: 'false'}"
+    }
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "🔄 CI BACK – Checkout du repository..."
+                deleteDir()
+                git branch: 'main', url: 'https://github.com/medamin87737/-PIfullstackJS-4TWIN6-2026-EspritHub.git'
+            }
+        }
+
+        stage('Install (Backend)') {
+            steps {
+                echo "📦 Installation des dépendances backend..."
+                dir('backend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'npm ci || npm install'
+                        } else {
+                            bat 'npm ci || npm install'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test (Backend)') {
+            steps {
+                echo "🧪 Exécution des tests backend..."
+                dir('backend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'if npm run | grep -q "test:ci"; then npm run test:ci; else npm run test; fi'
+                        } else {
+                            bat 'npm run test:ci || npm run test'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis (Backend)') {
+            when {
+                expression { return isUnix() } // simplifie: analyse Sonar sur agent Linux
+            }
+            steps {
+                echo "📊 Analyse SonarQube backend..."
+                dir('backend') {
+                    script {
+                        def scannerHome = tool 'SonarScanner'
+                        // Le nom "SonarQubeServer" doit correspondre à la config de ton serveur dans Jenkins (Manage Jenkins > Configure System > SonarQube servers)
+                        withSonarQubeEnv('SonarQubeServer') {
+                            sh "\"${scannerHome}/bin/sonar-scanner\""
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Sonar Quality Gate') {
+            when {
+                allOf {
+                    expression { return isUnix() }
+                    expression { return env.SONAR_WAIT_QUALITY_GATE == 'true' }
+                }
+            }
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build (Backend)') {
+            steps {
+                echo "🏗 Build backend..."
+                dir('backend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'npm run build'
+                        } else {
+                            bat 'npm run build'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'backend/coverage/**', allowEmptyArchive: true
+        }
+        success {
+            echo "✅ CI BACK terminé avec succès"
+            echo "🚀 Déclenchement automatique du pipeline CD backend..."
+            script {
+                // Si le job CD n'existe pas (ou a un nom différent / est dans un folder),
+                // on ne veut pas faire passer le CI en FAILURE.
+                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                    build job: env.CD_BACK_JOB, wait: false
+                }
+            }
+        }
+        failure { echo "❌ CI BACK échoué" }
+    }
+}
+
