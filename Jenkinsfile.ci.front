@@ -32,6 +32,7 @@ pipeline {
                     script {
                         if (isUnix()) {
                             sh 'npm ci || npm install'
+                            sh 'npm install --no-save --include=optional @rollup/rollup-linux-x64-gnu || true'
                         } else {
                             bat 'npm ci || npm install'
                         }
@@ -78,9 +79,9 @@ pipeline {
                         def scannerHome = tool 'SonarScanner'
                         withSonarQubeEnv('SonarQubeServer') {
                             if (isUnix()) {
-                                sh "\"${scannerHome}/bin/sonar-scanner\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
+                                sh "\"${scannerHome}/bin/sonar-scanner\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.host.url=${SONAR_HOST_URL}"
                             } else {
-                                bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
+                                bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.host.url=${SONAR_HOST_URL}"
                             }
                         }
                     }
