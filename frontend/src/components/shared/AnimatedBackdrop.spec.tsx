@@ -10,32 +10,31 @@ describe('AnimatedBackdrop Component', () => {
 
   it('should render backdrop element', () => {
     const { container } = render(<AnimatedBackdrop />);
-    const backdrop = container.querySelector('[class*="backdrop"]') || container.firstChild;
+    const backdrop = container.querySelector('[class*="ambient"]') || container.firstChild;
     expect(backdrop).toBeDefined();
   });
 
-  it('should handle onClick prop', () => {
-    const handleClick = () => {};
-    const { container } = render(<AnimatedBackdrop onClick={handleClick} />);
-    expect(container).toBeDefined();
+  it('should render ambient shapes', () => {
+    const { container } = render(<AnimatedBackdrop />);
+    const shapes = container.querySelectorAll('.ambient-shape');
+    expect(shapes.length).toBeGreaterThan(0);
   });
 
-  it('should handle visible prop', () => {
-    const { container: container1 } = render(<AnimatedBackdrop visible={true} />);
-    const { container: container2 } = render(<AnimatedBackdrop visible={false} />);
-    expect(container1).toBeDefined();
-    expect(container2).toBeDefined();
+  it('should render ambient grid', () => {
+    const { container } = render(<AnimatedBackdrop />);
+    const grid = container.querySelector('.ambient-grid');
+    expect(grid).toBeDefined();
   });
 
   it('should apply animation classes', () => {
     const { container } = render(<AnimatedBackdrop />);
-    expect(container.innerHTML).toBeTruthy();
+    expect(container.innerHTML).toContain('ambient');
   });
 
   it('should handle optional className prop', () => {
     const { container } = render(
       <AnimatedBackdrop className="custom-backdrop" />
     );
-    expect(container).toBeDefined();
+    expect(container.innerHTML).toContain('custom-backdrop');
   });
 });

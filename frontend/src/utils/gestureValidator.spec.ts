@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GestureValidator } from './gestureValidator';
+import type { GestureType } from '../types/hand-gesture.types';
 
 describe('GestureValidator', () => {
   let validator: GestureValidator;
@@ -18,7 +19,7 @@ describe('GestureValidator', () => {
 
   describe('update', () => {
     it('should return validation result object', () => {
-      const result = validator.update('thumbs_up');
+      const result = validator.update('THUMBS_UP' as GestureType);
       expect(result).toBeDefined();
       expect(result).toHaveProperty('isValidated');
       expect(result).toHaveProperty('progress');
@@ -26,44 +27,44 @@ describe('GestureValidator', () => {
     });
 
     it('should return isValidated false initially', () => {
-      const result = validator.update('thumbs_up');
+      const result = validator.update('THUMBS_UP' as GestureType);
       expect(result.isValidated).toBe(false);
     });
 
     it('should return progress 0 for new gesture', () => {
-      const result = validator.update('thumbs_up');
+      const result = validator.update('THUMBS_UP' as GestureType);
       expect(result.progress).toBe(0);
     });
 
     it('should track gesture changes', () => {
-      const result1 = validator.update('thumbs_up');
-      const result2 = validator.update('thumbs_down');
+      const result1 = validator.update('THUMBS_UP' as GestureType);
+      const result2 = validator.update('THUMBS_DOWN' as GestureType);
       expect(result1.isValidated).toBe(false);
       expect(result2.isValidated).toBe(false);
     });
 
     it('should increase progress over time', async () => {
-      const result1 = validator.update('thumbs_up');
+      const result1 = validator.update('THUMBS_UP' as GestureType);
       expect(result1.progress).toBe(0);
       
       // Simulate time passing
       await new Promise(resolve => setTimeout(resolve, 100));
-      const result2 = validator.update('thumbs_up');
+      const result2 = validator.update('THUMBS_UP' as GestureType);
       expect(result2.progress).toBeGreaterThan(result1.progress);
     });
   });
 
   describe('reset', () => {
     it('should reset validator state', () => {
-      validator.update('thumbs_up');
+      validator.update('THUMBS_UP' as GestureType);
       validator.reset();
       expect(validator.isInCooldown()).toBe(false);
     });
 
     it('should clear gesture after reset', () => {
-      validator.update('thumbs_up');
+      validator.update('THUMBS_UP' as GestureType);
       validator.reset();
-      const result = validator.update('thumbs_up');
+      const result = validator.update('THUMBS_UP' as GestureType);
       expect(result.progress).toBe(0);
     });
   });
@@ -85,14 +86,14 @@ describe('GestureValidator', () => {
     });
 
     it('should return current gesture after update', () => {
-      validator.update('thumbs_up');
-      expect(validator.getCurrentGesture()).toBe('thumbs_up');
+      validator.update('THUMBS_UP' as GestureType);
+      expect(validator.getCurrentGesture()).toBe('THUMBS_UP');
     });
 
     it('should update current gesture on change', () => {
-      validator.update('thumbs_up');
-      validator.update('thumbs_down');
-      expect(validator.getCurrentGesture()).toBe('thumbs_down');
+      validator.update('THUMBS_UP' as GestureType);
+      validator.update('THUMBS_DOWN' as GestureType);
+      expect(validator.getCurrentGesture()).toBe('THUMBS_DOWN');
     });
   });
 
@@ -102,9 +103,9 @@ describe('GestureValidator', () => {
     });
 
     it('should increment on gesture change', () => {
-      validator.update('thumbs_up');
+      validator.update('THUMBS_UP' as GestureType);
       const count1 = validator.getGestureChangeCount();
-      validator.update('thumbs_down');
+      validator.update('THUMBS_DOWN' as GestureType);
       const count2 = validator.getGestureChangeCount();
       expect(count2).toBeGreaterThan(count1);
     });

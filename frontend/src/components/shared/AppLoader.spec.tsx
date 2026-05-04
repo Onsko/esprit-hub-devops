@@ -16,7 +16,7 @@ describe('AppLoader Component', () => {
 
   it('should have loading class or attribute', () => {
     const { container } = render(<AppLoader />);
-    expect(container.innerHTML).toBeTruthy();
+    expect(container.innerHTML).toContain('loader');
   });
 
   it('should render with default styling', () => {
@@ -25,8 +25,8 @@ describe('AppLoader Component', () => {
     expect(element).toBeDefined();
   });
 
-  it('should handle optional message prop', () => {
-    const { container } = render(<AppLoader message="Loading..." />);
-    expect(container).toBeDefined();
+  it('should display SkillUpTn branding', () => {
+    const { container } = render(<AppLoader />);
+    expect(container.innerHTML).toContain('SkillUpTn');
   });
 });

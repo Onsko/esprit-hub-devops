@@ -6,7 +6,7 @@ describe('StatCard Component', () => {
   const defaultProps = {
     title: 'Test Stat',
     value: '100',
-    icon: 'test-icon',
+    icon: <span>📊</span>,
   };
 
   it('should render without crashing', () => {
@@ -42,14 +42,14 @@ describe('StatCard Component', () => {
 
   it('should handle optional trend prop', () => {
     const { container } = render(
-      <StatCard {...defaultProps} trend={{ value: 10, direction: 'up' }} />
+      <StatCard {...defaultProps} trend={{ value: 10, label: 'increase' }} />
     );
     expect(container).toBeDefined();
   });
 
-  it('should handle optional color prop', () => {
+  it('should handle optional className prop', () => {
     const { container } = render(
-      <StatCard {...defaultProps} color="primary" />
+      <StatCard {...defaultProps} className="custom-class" />
     );
     expect(container).toBeDefined();
   });
