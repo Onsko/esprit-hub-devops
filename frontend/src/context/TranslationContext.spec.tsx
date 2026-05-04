@@ -38,7 +38,7 @@ describe('TranslationContext', () => {
           <TestComponent />
         </TranslationProvider>,
       )
-      expect(screen.getByTestId('current-language')).toHaveTextContent('fr')
+      expect(screen.getByTestId('current-language')).textContent).toBe('fr')
     })
 
     it('should have supported languages list', () => {
@@ -47,7 +47,7 @@ describe('TranslationContext', () => {
           <TestComponent />
         </TranslationProvider>,
       )
-      expect(screen.getByTestId('supported-count')).toHaveTextContent('14')
+      expect(screen.getByTestId('supported-count')).textContent).toBe('14')
     })
 
     it('should have detected language as French', () => {
@@ -56,7 +56,7 @@ describe('TranslationContext', () => {
           <TestComponent />
         </TranslationProvider>,
       )
-      expect(screen.getByTestId('detected-lang')).toHaveTextContent('fr')
+      expect(screen.getByTestId('detected-lang')).textContent).toBe('fr')
     })
   })
 
@@ -68,12 +68,12 @@ describe('TranslationContext', () => {
         </TranslationProvider>,
       )
 
-      expect(screen.getByTestId('current-language')).toHaveTextContent('fr')
+      expect(screen.getByTestId('current-language')).textContent).toBe('fr')
 
       const setEnglishButton = screen.getByText('Set English')
       await userEvent.click(setEnglishButton)
 
-      expect(screen.getByTestId('current-language')).toHaveTextContent('en')
+      expect(screen.getByTestId('current-language')).textContent).toBe('en')
     })
 
     it('should support switching between multiple languages', async () => {
@@ -87,13 +87,13 @@ describe('TranslationContext', () => {
       const setFrenchButton = screen.getByText('Set French')
 
       await userEvent.click(setEnglishButton)
-      expect(screen.getByTestId('current-language')).toHaveTextContent('en')
+      expect(screen.getByTestId('current-language')).textContent).toBe('en')
 
       await userEvent.click(setFrenchButton)
-      expect(screen.getByTestId('current-language')).toHaveTextContent('fr')
+      expect(screen.getByTestId('current-language')).textContent).toBe('fr')
 
       await userEvent.click(setEnglishButton)
-      expect(screen.getByTestId('current-language')).toHaveTextContent('en')
+      expect(screen.getByTestId('current-language')).textContent).toBe('en')
     })
   })
 
@@ -104,7 +104,7 @@ describe('TranslationContext', () => {
           <TestComponent />
         </TranslationProvider>,
       )
-      expect(screen.getByTestId('translated-text')).toHaveTextContent('Hello World')
+      expect(screen.getByTestId('translated-text')).textContent).toBe('Hello World')
     })
   })
 
@@ -116,7 +116,7 @@ describe('TranslationContext', () => {
         </TranslationProvider>,
       )
 
-      expect(screen.getByTestId('supported-count')).toHaveTextContent('14')
+      expect(screen.getByTestId('supported-count')).textContent).toBe('14')
     })
   })
 
@@ -128,7 +128,7 @@ describe('TranslationContext', () => {
         </TranslationProvider>,
       )
 
-      expect(screen.getByTestId('translated-text')).toHaveTextContent('Hello World')
+      expect(screen.getByTestId('translated-text')).textContent).toBe('Hello World')
     })
 
     it('should work with empty strings', () => {
@@ -143,7 +143,7 @@ describe('TranslationContext', () => {
         </TranslationProvider>,
       )
 
-      expect(screen.getByTestId('empty-text')).toHaveTextContent('')
+      expect(screen.getByTestId('empty-text')).textContent).toBe('')
     })
 
     it('should work with special characters', () => {
@@ -158,7 +158,7 @@ describe('TranslationContext', () => {
         </TranslationProvider>,
       )
 
-      expect(screen.getByTestId('special-text')).toHaveTextContent('Hello @#$% World!')
+      expect(screen.getByTestId('special-text')).textContent).toBe('Hello @#$% World!')
     })
   })
 
@@ -179,3 +179,4 @@ describe('TranslationContext', () => {
     })
   })
 })
+

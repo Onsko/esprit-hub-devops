@@ -139,7 +139,7 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('users-count')).toHaveTextContent('0')
+        expect(screen.getByTestId('users-count')).textContent).toBe('0')
       })
     })
 
@@ -159,7 +159,7 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('activities-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('activities-count')).textContent).toBe('1')
       })
     })
 
@@ -183,7 +183,7 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('departments-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('departments-count')).textContent).toBe('1')
       })
     })
 
@@ -205,7 +205,7 @@ describe('DataContext', () => {
       )
 
       // Should only fetch activities (public endpoint)
-      expect(screen.getByTestId('departments-count')).toHaveTextContent('0')
+      expect(screen.getByTestId('departments-count')).textContent).toBe('0')
     })
   })
 
@@ -235,7 +235,7 @@ describe('DataContext', () => {
       })
 
       await waitFor(() => {
-        expect(screen.getByTestId('users-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('users-count')).textContent).toBe('1')
       })
     })
 
@@ -266,14 +266,14 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('users-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('users-count')).textContent).toBe('1')
       })
 
       const updateButton = screen.getByText('Update User')
       updateButton.click()
 
       await waitFor(() => {
-        expect(screen.getByTestId('users-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('users-count')).textContent).toBe('1')
       })
     })
 
@@ -303,14 +303,14 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('users-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('users-count')).textContent).toBe('1')
       })
 
       const deleteButton = screen.getByText('Delete User')
       deleteButton.click()
 
       await waitFor(() => {
-        expect(screen.getByTestId('users-count')).toHaveTextContent('0')
+        expect(screen.getByTestId('users-count')).textContent).toBe('0')
       })
     })
   })
@@ -345,7 +345,7 @@ describe('DataContext', () => {
       })
 
       await waitFor(() => {
-        expect(screen.getByTestId('departments-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('departments-count')).textContent).toBe('1')
       })
     })
 
@@ -375,14 +375,14 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('departments-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('departments-count')).textContent).toBe('1')
       })
 
       const updateButton = screen.getByText('Update Department')
       updateButton.click()
 
       await waitFor(() => {
-        expect(screen.getByTestId('departments-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('departments-count')).textContent).toBe('1')
       })
     })
 
@@ -410,14 +410,14 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('departments-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('departments-count')).textContent).toBe('1')
       })
 
       const deleteButton = screen.getByText('Delete Department')
       deleteButton.click()
 
       await waitFor(() => {
-        expect(screen.getByTestId('departments-count')).toHaveTextContent('0')
+        expect(screen.getByTestId('departments-count')).textContent).toBe('0')
       })
     })
   })
@@ -441,7 +441,7 @@ describe('DataContext', () => {
       addButton.click()
 
       await waitFor(() => {
-        expect(screen.getByTestId('activities-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('activities-count')).textContent).toBe('1')
       })
     })
 
@@ -460,7 +460,7 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('activities-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('activities-count')).textContent).toBe('1')
       })
 
       const updatedActivity = { ...mockActivity, title: 'Updated Training' }
@@ -468,7 +468,7 @@ describe('DataContext', () => {
       updateButton.click()
 
       await waitFor(() => {
-        expect(screen.getByTestId('activities-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('activities-count')).textContent).toBe('1')
       })
     })
 
@@ -487,14 +487,14 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('activities-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('activities-count')).textContent).toBe('1')
       })
 
       const deleteButton = screen.getByText('Delete Activity')
       deleteButton.click()
 
       await waitFor(() => {
-        expect(screen.getByTestId('activities-count')).toHaveTextContent('0')
+        expect(screen.getByTestId('activities-count')).textContent).toBe('0')
       })
     })
   })
@@ -528,14 +528,14 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('notifications-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('notifications-count')).textContent).toBe('1')
       })
 
       const markReadButton = screen.getByText('Mark Read')
       markReadButton.click()
 
       await waitFor(() => {
-        expect(screen.getByTestId('unread-count')).toHaveTextContent('0')
+        expect(screen.getByTestId('unread-count')).textContent).toBe('0')
       })
     })
 
@@ -566,7 +566,7 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('unread-count')).toHaveTextContent('1')
+        expect(screen.getByTestId('unread-count')).textContent).toBe('1')
       })
     })
   })
@@ -592,7 +592,7 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('dept-name')).toHaveTextContent('Engineering')
+        expect(screen.getByTestId('dept-name')).textContent).toBe('Engineering')
       })
     })
 
@@ -616,7 +616,7 @@ describe('DataContext', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId('dept-name')).toHaveTextContent('N/A')
+        expect(screen.getByTestId('dept-name')).textContent).toBe('N/A')
       })
     })
   })
@@ -638,3 +638,4 @@ describe('DataContext', () => {
     })
   })
 })
+

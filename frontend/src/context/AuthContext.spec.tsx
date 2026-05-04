@@ -67,8 +67,8 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>,
       )
-      expect(screen.getByTestId('user-name')).toHaveTextContent('Not logged in')
-      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false')
+      expect(screen.getByTestId('user-name').textContent).toBe('Not logged in')
+      expect(screen.getByTestId('is-authenticated').textContent).toBe('false')
     })
 
     it('should restore user from localStorage on mount', () => {
@@ -78,8 +78,8 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>,
       )
-      expect(screen.getByTestId('user-name')).toHaveTextContent('John Doe')
-      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('true')
+      expect(screen.getByTestId('user-name')).textContent).toBe('John Doe')
+      expect(screen.getByTestId('is-authenticated')).textContent).toBe('true')
     })
 
     it('should restore user from sessionStorage on mount', () => {
@@ -89,8 +89,8 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>,
       )
-      expect(screen.getByTestId('user-name')).toHaveTextContent('John Doe')
-      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('true')
+      expect(screen.getByTestId('user-name')).textContent).toBe('John Doe')
+      expect(screen.getByTestId('is-authenticated')).textContent).toBe('true')
     })
 
     it('should prefer localStorage over sessionStorage', () => {
@@ -103,7 +103,7 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>,
       )
-      expect(screen.getByTestId('user-name')).toHaveTextContent('Local User')
+      expect(screen.getByTestId('user-name')).textContent).toBe('Local User')
     })
   })
 
@@ -125,8 +125,8 @@ describe('AuthContext', () => {
       await userEvent.click(loginButton)
 
       await waitFor(() => {
-        expect(screen.getByTestId('user-name')).toHaveTextContent('John Doe')
-        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('true')
+        expect(screen.getByTestId('user-name')).textContent).toBe('John Doe')
+        expect(screen.getByTestId('is-authenticated')).textContent).toBe('true')
       })
     })
 
@@ -171,7 +171,7 @@ describe('AuthContext', () => {
       await userEvent.click(loginButton)
 
       await waitFor(() => {
-        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false')
+        expect(screen.getByTestId('is-authenticated')).textContent).toBe('false')
       })
     })
 
@@ -212,7 +212,7 @@ describe('AuthContext', () => {
       await userEvent.click(loginButton)
 
       await waitFor(() => {
-        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false')
+        expect(screen.getByTestId('is-authenticated')).textContent).toBe('false')
       })
     })
 
@@ -233,7 +233,7 @@ describe('AuthContext', () => {
       await userEvent.click(loginButton)
 
       await waitFor(() => {
-        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false')
+        expect(screen.getByTestId('is-authenticated')).textContent).toBe('false')
       })
     })
   })
@@ -250,14 +250,14 @@ describe('AuthContext', () => {
         </AuthProvider>,
       )
 
-      expect(screen.getByTestId('user-name')).toHaveTextContent('John Doe')
+      expect(screen.getByTestId('user-name')).textContent).toBe('John Doe')
 
       const logoutButton = screen.getByText('Logout')
       await userEvent.click(logoutButton)
 
       await waitFor(() => {
-        expect(screen.getByTestId('user-name')).toHaveTextContent('Not logged in')
-        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false')
+        expect(screen.getByTestId('user-name')).textContent).toBe('Not logged in')
+        expect(screen.getByTestId('is-authenticated')).textContent).toBe('false')
         expect(localStorage.getItem('auth_user')).toBeNull()
         expect(localStorage.getItem('auth_token')).toBeNull()
       })
@@ -291,7 +291,7 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>,
       )
-      expect(screen.getByTestId('has-admin-role')).toHaveTextContent('false')
+      expect(screen.getByTestId('has-admin-role')).textContent).toBe('false')
     })
 
     it('should normalize role comparison', () => {
@@ -303,7 +303,7 @@ describe('AuthContext', () => {
         </AuthProvider>,
       )
       // Should still work because hasRole normalizes
-      expect(screen.getByTestId('has-admin-role')).toHaveTextContent('false')
+      expect(screen.getByTestId('has-admin-role')).textContent).toBe('false')
     })
   })
 
@@ -386,3 +386,4 @@ describe('AuthContext', () => {
     })
   })
 })
+
