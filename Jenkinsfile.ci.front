@@ -79,9 +79,9 @@ pipeline {
                         def scannerHome = tool 'SonarScanner'
                         withSonarQubeEnv('SonarQubeServer') {
                             if (isUnix()) {
-                                sh "\"${scannerHome}/bin/sonar-scanner\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.host.url=${SONAR_HOST_URL}"
+                                sh "\"${scannerHome}/bin/sonar-scanner\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
                             } else {
-                                bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.host.url=${SONAR_HOST_URL}"
+                                bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
                             }
                         }
                     }
