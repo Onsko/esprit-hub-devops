@@ -2,37 +2,36 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'Node20'
+        nodejs 'NodeJS'
     }
 
     environment {
-        CD_FRONT_JOB = 'CD-Front'
-        // true = bloque si Quality Gate Sonar échoue. Défaut false pour CI vert sans webhook ni gate verte.
-        SONAR_WAIT_QUALITY_GATE = "${env.SONAR_WAIT_QUALITY_GATE ?: 'false'}"
+        SONAR_HOST_URL = 'http://localhost:9000'
+        SONAR_LOGIN = credentials('sonarqube-token')
     }
 
     options {
         skipDefaultCheckout(true)
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                echo "🔄 CI FRONT – Checkout du repository..."
+                echo "🔄 CI-Front: Checkout du repository..."
                 deleteDir()
-                git branch: 'main', url: 'https://github.com/medamin87737/-PIfullstackJS-4TWIN6-2026-EspritHub.git'
+                git branch: 'main', url: 'https://github.com/Onsko/esprit-hub-devops.git'
             }
         }
 
-        stage('Install (Frontend)') {
+        stage('Install Dependencies') {
             steps {
                 echo "📦 Installation des dépendances frontend..."
                 dir('frontend') {
                     script {
                         if (isUnix()) {
                             sh 'npm ci || npm install'
-                            sh 'npm install --no-save --include=optional @rollup/rollup-linux-x64-gnu || true'
                         } else {
                             bat 'npm ci || npm install'
                         }
@@ -41,56 +40,57 @@ pipeline {
             }
         }
 
-        stage('Test (Frontend)') {
+        stage('Run Unit Tests') {
             steps {
-                echo "🧪 Exécution des tests frontend..."
+                echo "🧪 Exécution des tests unitaires frontend..."
                 dir('frontend') {
                     script {
                         if (isUnix()) {
-                            sh 'if npm run | grep -q "test:ci"; then npm run test:ci; else npm run test; fi'
+                            sh 'npm run test:ci'
                         } else {
-                            bat 'npm run test:ci || npm run test'
+                            bat 'npm run test:ci'
                         }
                     }
                 }
             }
         }
 
-        stage('SonarQube Analysis (Frontend)') {
-            when {
-                expression { return isUnix() } // simplifie: analyse Sonar sur agent Linux
-            }
+        stage('Generate Coverage Report') {
             steps {
-                echo "📊 Analyse SonarQube frontend..."
+                echo "📊 Génération du rapport de couverture..."
+                dir('frontend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'ls -la coverage/ || echo "Coverage directory not found"'
+                        } else {
+                            bat 'dir coverage || echo Coverage directory not found'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo "🔍 Analyse SonarQube du frontend..."
                 dir('frontend') {
                     script {
                         def scannerHome = tool 'SonarScanner'
-                        // Le nom "SonarQubeServer" doit correspondre à la config de ton serveur dans Jenkins
                         withSonarQubeEnv('SonarQubeServer') {
-                            sh "\"${scannerHome}/bin/sonar-scanner\""
+                            if (isUnix()) {
+                                sh "\"${scannerHome}/bin/sonar-scanner\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
+                            } else {
+                                bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=skillup-frontend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
+                            }
                         }
                     }
                 }
             }
         }
 
-        stage('Sonar Quality Gate') {
-            when {
-                allOf {
-                    expression { return isUnix() }
-                    expression { return env.SONAR_WAIT_QUALITY_GATE == 'true' }
-                }
-            }
+        stage('Build') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('Build (Frontend)') {
-            steps {
-                echo "🏗 Build frontend..."
+                echo "🏗️ Build du frontend..."
                 dir('frontend') {
                     script {
                         if (isUnix()) {
@@ -106,18 +106,16 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'frontend/coverage/**, frontend/reports/**', allowEmptyArchive: true
+            echo "📁 Archivage des artefacts..."
+            archiveArtifacts artifacts: 'frontend/coverage/**,frontend/dist/**,frontend/reports/**', allowEmptyArchive: true
+            junit testResults: 'frontend/reports/**/*.xml', allowEmptyResults: true
         }
         success {
-            echo "✅ CI FRONT terminé avec succès"
-            echo "🚀 Déclenchement automatique du pipeline CD frontend..."
-            script {
-                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                    build job: env.CD_FRONT_JOB, wait: false
-                }
-            }
+            echo "✅ CI-Front: Tests et analyse réussis!"
         }
-        failure { echo "❌ CI FRONT échoué" }
+        failure {
+            echo "❌ CI-Front: Échec du pipeline"
+        }
     }
 }
 

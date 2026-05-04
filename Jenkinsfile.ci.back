@@ -2,31 +2,30 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'Node20'
+        nodejs 'NodeJS'
     }
 
     environment {
-        // Must match the Jenkins pipeline job name exactly (dashboard: CD-Back).
-        CD_BACK_JOB = 'CD-Back'
-        // true = bloque le build si Sonar Quality Gate échoue (webhook Sonar→Jenkins requis). Défaut false = CI stable tant que tests+build OK.
-        SONAR_WAIT_QUALITY_GATE = "${env.SONAR_WAIT_QUALITY_GATE ?: 'false'}"
+        SONAR_HOST_URL = 'http://localhost:9000'
+        SONAR_LOGIN = credentials('sonarqube-token')
     }
 
     options {
         skipDefaultCheckout(true)
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                echo "🔄 CI BACK – Checkout du repository..."
+                echo "🔄 CI-Back: Checkout du repository..."
                 deleteDir()
-                git branch: 'main', url: 'https://github.com/medamin87737/-PIfullstackJS-4TWIN6-2026-EspritHub.git'
+                git branch: 'main', url: 'https://github.com/Onsko/esprit-hub-devops.git'
             }
         }
 
-        stage('Install (Backend)') {
+        stage('Install Dependencies') {
             steps {
                 echo "📦 Installation des dépendances backend..."
                 dir('backend') {
@@ -41,56 +40,57 @@ pipeline {
             }
         }
 
-        stage('Test (Backend)') {
+        stage('Run Unit Tests') {
             steps {
-                echo "🧪 Exécution des tests backend..."
+                echo "🧪 Exécution des tests unitaires backend..."
                 dir('backend') {
                     script {
                         if (isUnix()) {
-                            sh 'if npm run | grep -q "test:ci"; then npm run test:ci; else npm run test; fi'
+                            sh 'npm run test:ci'
                         } else {
-                            bat 'npm run test:ci || npm run test'
+                            bat 'npm run test:ci'
                         }
                     }
                 }
             }
         }
 
-        stage('SonarQube Analysis (Backend)') {
-            when {
-                expression { return isUnix() } // simplifie: analyse Sonar sur agent Linux
-            }
+        stage('Generate Coverage Report') {
             steps {
-                echo "📊 Analyse SonarQube backend..."
+                echo "📊 Génération du rapport de couverture..."
+                dir('backend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'ls -la coverage/ || echo "Coverage directory not found"'
+                        } else {
+                            bat 'dir coverage || echo Coverage directory not found'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo "🔍 Analyse SonarQube du backend..."
                 dir('backend') {
                     script {
                         def scannerHome = tool 'SonarScanner'
-                        // Le nom "SonarQubeServer" doit correspondre à la config de ton serveur dans Jenkins (Manage Jenkins > Configure System > SonarQube servers)
                         withSonarQubeEnv('SonarQubeServer') {
-                            sh "\"${scannerHome}/bin/sonar-scanner\""
+                            if (isUnix()) {
+                                sh "\"${scannerHome}/bin/sonar-scanner\" -Dsonar.projectKey=skillup-backend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.test.ts -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
+                            } else {
+                                bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=skillup-backend -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions=**/*.spec.ts,**/*.test.ts -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
+                            }
                         }
                     }
                 }
             }
         }
 
-        stage('Sonar Quality Gate') {
-            when {
-                allOf {
-                    expression { return isUnix() }
-                    expression { return env.SONAR_WAIT_QUALITY_GATE == 'true' }
-                }
-            }
+        stage('Build') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('Build (Backend)') {
-            steps {
-                echo "🏗 Build backend..."
+                echo "🏗️ Build du backend..."
                 dir('backend') {
                     script {
                         if (isUnix()) {
@@ -106,20 +106,16 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'backend/coverage/**', allowEmptyArchive: true
+            echo "📁 Archivage des artefacts..."
+            archiveArtifacts artifacts: 'backend/coverage/**,backend/dist/**', allowEmptyArchive: true
+            junit testResults: 'backend/coverage/**/*.xml', allowEmptyResults: true
         }
         success {
-            echo "✅ CI BACK terminé avec succès"
-            echo "🚀 Déclenchement automatique du pipeline CD backend..."
-            script {
-                // Si le job CD n'existe pas (ou a un nom différent / est dans un folder),
-                // on ne veut pas faire passer le CI en FAILURE.
-                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                    build job: env.CD_BACK_JOB, wait: false
-                }
-            }
+            echo "✅ CI-Back: Tests et analyse réussis!"
         }
-        failure { echo "❌ CI BACK échoué" }
+        failure {
+            echo "❌ CI-Back: Échec du pipeline"
+        }
     }
 }
 
