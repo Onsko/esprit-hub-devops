@@ -119,12 +119,15 @@ describe('EmployeeActivities', () => {
     // Mock useToast
     vi.mocked(useToast).mockReturnValue({
       toast: mockToast,
+      dismiss: vi.fn(),
+      toasts: [],
     })
 
     // Mock useRewrite
     vi.mocked(useRewrite).mockReturnValue({
       rewrite: mockRewrite,
       rewriting: false,
+      error: null,
     })
 
     // Mock successful API response
