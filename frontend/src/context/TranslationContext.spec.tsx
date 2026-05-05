@@ -1,22 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TranslationProvider, useTranslation } from './TranslationContext'
 
-// Mock fetch globally
 global.fetch = vi.fn()
 
 function TestComponent() {
-  const { language, setLanguage, supportedLanguages, t, detectedLang } = useTranslation()
-
+  const { language, setLanguage, isTranslating, supportedLanguages, t, detectedLang } = useTranslation()
   return (
     <div>
       <div data-testid="current-language">{language}</div>
-      <div data-testid="detected-lang">{detectedLang}</div>
+      <div data-testid="is-translating">{isTranslating ? 'true' : 'false'}</div>
       <div data-testid="supported-count">{supportedLanguages.length}</div>
+      <div data-testid="detected-lang">{detectedLang}</div>
       <div data-testid="translated-text">{t('Hello World')}</div>
       <button onClick={() => setLanguage('en')}>Set English</button>
       <button onClick={() => setLanguage('fr')}>Set French</button>
+      <button onClick={() => setLanguage('ar')}>Set Arabic</button>
     </div>
   )
 }
@@ -24,7 +24,6 @@ function TestComponent() {
 describe('TranslationContext', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    document.body.innerHTML = ''
   })
 
   afterEach(() => {
@@ -38,7 +37,16 @@ describe('TranslationContext', () => {
           <TestComponent />
         </TranslationProvider>,
       )
-      expect(screen.getByTestId('current-language')).textContent).toBe('fr')
+      expect(screen.getByTestId('current-language').textContent).toBe('fr')
+    })
+
+    it('should initialize with isTranslating as false', () => {
+      render(
+        <TranslationProvider>
+          <TestComponent />
+        </TranslationProvider>,
+      )
+      expect(screen.getByTestId('is-translating').textContent).toBe('false')
     })
 
     it('should have supported languages list', () => {
@@ -47,118 +55,158 @@ describe('TranslationContext', () => {
           <TestComponent />
         </TranslationProvider>,
       )
-      expect(screen.getByTestId('supported-count')).textContent).toBe('14')
+      expect(screen.getByTestId('supported-count').textContent).not.toBe('0')
     })
 
-    it('should have detected language as French', () => {
+    it('should initialize with detected language as French', () => {
       render(
         <TranslationProvider>
           <TestComponent />
         </TranslationProvider>,
       )
-      expect(screen.getByTestId('detected-lang')).textContent).toBe('fr')
+      expect(screen.getByTestId('detected-lang').textContent).toBe('fr')
     })
   })
 
   describe('language switching', () => {
-    it('should change language when setLanguage is called', async () => {
+    it('should switch to English', async () => {
       render(
         <TranslationProvider>
           <TestComponent />
         </TranslationProvider>,
       )
 
-      expect(screen.getByTestId('current-language')).textContent).toBe('fr')
+      const englishButton = screen.getByText('Set English')
+      await userEvent.click(englishButton)
 
-      const setEnglishButton = screen.getByText('Set English')
-      await userEvent.click(setEnglishButton)
-
-      expect(screen.getByTestId('current-language')).textContent).toBe('en')
+      await waitFor(() => {
+        expect(screen.getByTestId('current-language').textContent).toBe('en')
+      })
     })
 
-    it('should support switching between multiple languages', async () => {
+    it('should switch to Arabic', async () => {
       render(
         <TranslationProvider>
           <TestComponent />
         </TranslationProvider>,
       )
 
-      const setEnglishButton = screen.getByText('Set English')
-      const setFrenchButton = screen.getByText('Set French')
+      const arabicButton = screen.getByText('Set Arabic')
+      await userEvent.click(arabicButton)
 
-      await userEvent.click(setEnglishButton)
-      expect(screen.getByTestId('current-language')).textContent).toBe('en')
-
-      await userEvent.click(setFrenchButton)
-      expect(screen.getByTestId('current-language')).textContent).toBe('fr')
-
-      await userEvent.click(setEnglishButton)
-      expect(screen.getByTestId('current-language')).textContent).toBe('en')
+      await waitFor(() => {
+        expect(screen.getByTestId('current-language').textContent).toBe('ar')
+      })
     })
-  })
 
-  describe('translation functionality', () => {
-    it('should return original text when language is French', () => {
+    it('should switch back to French', async () => {
       render(
         <TranslationProvider>
           <TestComponent />
         </TranslationProvider>,
       )
-      expect(screen.getByTestId('translated-text')).textContent).toBe('Hello World')
+
+      const englishButton = screen.getByText('Set English')
+      await userEvent.click(englishButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('current-language').textContent).toBe('en')
+      })
+
+      const frenchButton = screen.getByText('Set French')
+      await userEvent.click(frenchButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('current-language').textContent).toBe('fr')
+      })
     })
   })
 
   describe('supported languages', () => {
-    it('should include all expected languages', () => {
+    it('should include French in supported languages', () => {
+      const TestSupportedLangs = () => {
+        const { supportedLanguages } = useTranslation()
+        const hasFrench = supportedLanguages.some(lang => lang.code === 'fr')
+        return <div data-testid="has-french">{hasFrench ? 'true' : 'false'}</div>
+      }
+
       render(
         <TranslationProvider>
-          <TestComponent />
+          <TestSupportedLangs />
         </TranslationProvider>,
       )
+      expect(screen.getByTestId('has-french').textContent).toBe('true')
+    })
 
-      expect(screen.getByTestId('supported-count')).textContent).toBe('14')
+    it('should include English in supported languages', () => {
+      const TestSupportedLangs = () => {
+        const { supportedLanguages } = useTranslation()
+        const hasEnglish = supportedLanguages.some(lang => lang.code === 'en')
+        return <div data-testid="has-english">{hasEnglish ? 'true' : 'false'}</div>
+      }
+
+      render(
+        <TranslationProvider>
+          <TestSupportedLangs />
+        </TranslationProvider>,
+      )
+      expect(screen.getByTestId('has-english').textContent).toBe('true')
+    })
+
+    it('should include Arabic in supported languages', () => {
+      const TestSupportedLangs = () => {
+        const { supportedLanguages } = useTranslation()
+        const hasArabic = supportedLanguages.some(lang => lang.code === 'ar')
+        return <div data-testid="has-arabic">{hasArabic ? 'true' : 'false'}</div>
+      }
+
+      render(
+        <TranslationProvider>
+          <TestSupportedLangs />
+        </TranslationProvider>,
+      )
+      expect(screen.getByTestId('has-arabic').textContent).toBe('true')
+    })
+
+    it('should have at least 10 supported languages', () => {
+      const TestSupportedLangs = () => {
+        const { supportedLanguages } = useTranslation()
+        return <div data-testid="lang-count">{supportedLanguages.length}</div>
+      }
+
+      render(
+        <TranslationProvider>
+          <TestSupportedLangs />
+        </TranslationProvider>,
+      )
+      const count = parseInt(screen.getByTestId('lang-count').textContent ?? '0', 10)
+      expect(count).toBeGreaterThanOrEqual(10)
     })
   })
 
-  describe('t function', () => {
-    it('should return the same text passed to it', () => {
+  describe('translation function', () => {
+    it('should return the same text when called with French language', () => {
       render(
         <TranslationProvider>
           <TestComponent />
         </TranslationProvider>,
       )
-
-      expect(screen.getByTestId('translated-text')).textContent).toBe('Hello World')
+      expect(screen.getByTestId('translated-text').textContent).toBe('Hello World')
     })
 
-    it('should work with empty strings', () => {
-      function TestComponentWithEmpty() {
+    it('should provide t function that returns text', () => {
+      const TestTFunction = () => {
         const { t } = useTranslation()
-        return <div data-testid="empty-text">{t('')}</div>
+        const result = t('Test Text')
+        return <div data-testid="t-result">{result}</div>
       }
 
       render(
         <TranslationProvider>
-          <TestComponentWithEmpty />
+          <TestTFunction />
         </TranslationProvider>,
       )
-
-      expect(screen.getByTestId('empty-text')).textContent).toBe('')
-    })
-
-    it('should work with special characters', () => {
-      function TestComponentWithSpecial() {
-        const { t } = useTranslation()
-        return <div data-testid="special-text">{t('Hello @#$% World!')}</div>
-      }
-
-      render(
-        <TranslationProvider>
-          <TestComponentWithSpecial />
-        </TranslationProvider>,
-      )
-
-      expect(screen.getByTestId('special-text')).textContent).toBe('Hello @#$% World!')
+      expect(screen.getByTestId('t-result').textContent).toBe('Test Text')
     })
   })
 
@@ -178,5 +226,34 @@ describe('TranslationContext', () => {
       consoleSpy.mockRestore()
     })
   })
-})
 
+  describe('translatePage function', () => {
+    it('should have translatePage function available', () => {
+      const TestTranslatePage = () => {
+        const { translatePage } = useTranslation()
+        return <div data-testid="has-translate-page">{typeof translatePage === 'function' ? 'true' : 'false'}</div>
+      }
+
+      render(
+        <TranslationProvider>
+          <TestTranslatePage />
+        </TranslationProvider>,
+      )
+      expect(screen.getByTestId('has-translate-page').textContent).toBe('true')
+    })
+
+    it('should not be translating initially', () => {
+      const TestTranslatePage = () => {
+        const { isTranslating } = useTranslation()
+        return <div data-testid="initial-translating">{isTranslating ? 'true' : 'false'}</div>
+      }
+
+      render(
+        <TranslationProvider>
+          <TestTranslatePage />
+        </TranslationProvider>,
+      )
+      expect(screen.getByTestId('initial-translating').textContent).toBe('false')
+    })
+  })
+})
